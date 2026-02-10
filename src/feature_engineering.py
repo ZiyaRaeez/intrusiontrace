@@ -1,11 +1,11 @@
 import numpy as np
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import RobustScaler
 from sklearn.decomposition import PCA
 from sklearn.cluster import MiniBatchKMeans
 
 
 def apply_scaling(X_train, X_test):
-    scaler = StandardScaler()
+    scaler = RobustScaler()
 
     X_train_scaled = scaler.fit_transform(X_train)
     X_test_scaled = scaler.transform(X_test)
@@ -13,13 +13,20 @@ def apply_scaling(X_train, X_test):
     return X_train_scaled, X_test_scaled, scaler
 
 
+
 def apply_pca(X_train_scaled, X_test_scaled, n_components=8):
-    pca = PCA(n_components=n_components, random_state=42)
+    pca = PCA(
+        n_components=n_components,
+        random_state=42,
+        svd_solver="randomized"
+    )
 
     X_train_pca = pca.fit_transform(X_train_scaled)
     X_test_pca = pca.transform(X_test_scaled)
 
     return X_train_pca, X_test_pca, pca
+
+
 
 
 def apply_kmeans(X_train_pca, X_test_pca):

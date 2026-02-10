@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
@@ -5,8 +6,8 @@ from sklearn.preprocessing import LabelEncoder
 
 def load_and_clean(filepath):
     data = pd.read_csv(filepath)
-
-    # Remove duplicates and nulls
+    data.columns = data.columns.str.strip()
+    
     data = data.drop_duplicates()
     data = data.dropna()
 
@@ -15,9 +16,18 @@ def load_and_clean(filepath):
 
 def prepare_data(filepath, target_column="Attack type"):
     data = load_and_clean(filepath)
+    
+    print("Any NaN:", data.isna().any().any())
+    print("Any Inf:", np.isinf(data.select_dtypes(include=[np.number])).any().any())
+    print("Max value:", data.select_dtypes(include=[np.number]).max().max())
+    print("Min value:", data.select_dtypes(include=[np.number]).min().min())
 
-    X = data.drop(columns=[target_column])
+
+    X = data.drop(columns=[target_column, "id"])
     y = data[target_column]
+
+    print(data.columns)
+
 
     le = LabelEncoder()
     y_encoded = le.fit_transform(y)
