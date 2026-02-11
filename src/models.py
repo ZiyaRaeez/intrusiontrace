@@ -1,5 +1,6 @@
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.svm import LinearSVC
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, classification_report
 
 
@@ -22,6 +23,19 @@ def train_svm(X_train, y_train):
 
     svm.fit(X_train, y_train)
     return svm
+
+
+
+def train_random_forest(X_train, y_train):
+    rf = RandomForestClassifier(
+        n_estimators=50,
+        max_depth=15,
+        random_state=42,
+        n_jobs=-1
+    )
+
+    rf.fit(X_train, y_train)
+    return rf
 
 
 def evaluate_model(model, X_test, y_test):
