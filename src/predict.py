@@ -38,10 +38,17 @@ priority_map = {
 
 # =============================
 # MAIN PREDICTION FUNCTION
+# (Works for both CSV upload & manual input)
 # =============================
-def predict_file(uploaded_file):
+def predict_file(input_data):
 
-    df = pd.read_csv(uploaded_file)
+    # ---------------------------------------
+    # ACCEPT BOTH: uploaded file OR dataframe
+    # ---------------------------------------
+    if isinstance(input_data, pd.DataFrame):
+        df = input_data.copy()
+    else:
+        df = pd.read_csv(input_data)
 
     # remove label + id if present
     for col in ["Attack type", "id"]:
@@ -49,7 +56,7 @@ def predict_file(uploaded_file):
             df = df.drop(columns=[col])
 
     # ------------------------------------------------
-    # CLEAN COLUMN NAMES (remove spaces issues)
+    # CLEAN COLUMN NAMES
     # ------------------------------------------------
     df.columns = df.columns.str.strip()
 
@@ -58,12 +65,12 @@ def predict_file(uploaded_file):
     # ------------------------------------------------
     trained_cols = list(scaler.feature_names_in_)
 
-    # add missing columns as 0
+    # add missing columns if not present
     for col in trained_cols:
         if col not in df.columns:
             df[col] = 0
 
-    # keep only trained columns and order
+    # keep only trained columns and correct order
     X = df[trained_cols].copy()
 
     # -----------------------
@@ -83,12 +90,15 @@ def predict_file(uploaded_file):
     X_final = np.column_stack((X_pca, clusters))
 
     # -----------------------
-    # PREDICTIONS
+    # MODEL PREDICTIONS
     # -----------------------
     rf_pred = rf.predict(X)
     dt_pred = dt.predict(X)
     svm_pred = svm.predict(X_final)
 
+    # -----------------------
+    # ENSEMBLE VOTING
+    # -----------------------
     all_preds = np.vstack([rf_pred, dt_pred, svm_pred])
 
     ensemble_pred = np.apply_along_axis(
@@ -108,6 +118,9 @@ def predict_file(uploaded_file):
     alerts = [get_alert(r) for r in risk_scores]
     priorities = [priority_map.get(a, "Medium") for a in attack_labels]
 
+    # -----------------------
+    # OUTPUT
+    # -----------------------
     output = pd.DataFrame({
         "Predicted_Attack": attack_labels,
         "Risk_%": risk_scores.round(2),
@@ -117,3 +130,11 @@ def predict_file(uploaded_file):
     })
 
     return output
+
+
+# =============================
+# RETURN FEATURE COLUMNS
+# (for manual entry dashboard)
+# =============================
+def get_feature_columns():
+    return list(scaler.feature_names_in_)

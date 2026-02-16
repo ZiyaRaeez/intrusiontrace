@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import time
-from src.predict import predict_file
+from src.predict import predict_file, get_feature_columns
 from src.shap_explainer import generate_shap_plot
 
 st.set_page_config(page_title="IntrusionTrace", layout="wide")
@@ -9,7 +9,61 @@ st.set_page_config(page_title="IntrusionTrace", layout="wide")
 st.title("🚨 IntrusionTrace Hybrid Intrusion Detection System")
 st.write("AI-Powered Intrusion Detection with Explainable AI")
 
-uploaded = st.file_uploader("Upload WSN CSV file", type=["csv"])
+# =========================================================
+# SIDEBAR INPUT MODE
+# =========================================================
+st.sidebar.title("Input Mode")
+
+mode = st.sidebar.radio(
+    "Choose how to run detection:",
+    ["Upload Dataset", "Manual Entry"]
+)
+
+uploaded = None
+
+# =========================================================
+# DATASET UPLOAD MODE
+# =========================================================
+if mode == "Upload Dataset":
+    uploaded = st.file_uploader("Upload WSN dataset CSV", type=["csv"])
+
+
+# =========================================================
+# MANUAL ENTRY MODE (PASTE SINGLE ROW)
+# =========================================================
+if mode == "Manual Entry":
+
+    st.subheader("Real-Time Intrusion Prediction")
+
+    cols = get_feature_columns()
+
+    st.info(f"Paste {len(cols)} feature values separated by comma (same order as dataset)")
+
+    sample = ",".join(["0"] * len(cols))
+    st.code(sample[:120] + "...", language="text")
+
+    text = st.text_area("Paste feature values here:")
+
+    if st.button("Predict Intrusion"):
+
+        if text.strip() == "":
+            st.warning("Paste values first")
+        else:
+            try:
+                values = [float(x.strip()) for x in text.split(",")]
+
+                if len(values) != len(cols):
+                    st.error(f"Expected {len(cols)} values but got {len(values)}")
+                else:
+                    df = pd.DataFrame([values], columns=cols)
+
+                    result = predict_file(df)
+
+                    st.success("Prediction Complete")
+                    st.dataframe(result, use_container_width=True)
+
+            except:
+                st.error("Invalid format. Use only numbers separated by commas.")
 
 # =========================================================
 # AFTER FILE UPLOAD
@@ -18,7 +72,6 @@ if uploaded:
 
     st.success("Dataset uploaded successfully")
 
-    # reset pointer before reading
     uploaded.seek(0)
     result = predict_file(uploaded)
 
@@ -93,4 +146,5 @@ if uploaded:
             st.image(img_path, caption="SHAP Feature Importance", use_container_width=True)
 
 else:
-    st.info("Upload a WSN dataset CSV file to begin intrusion detection.")
+    if mode == "Upload Dataset":
+        st.info("Upload a WSN dataset CSV file to begin intrusion detection.")

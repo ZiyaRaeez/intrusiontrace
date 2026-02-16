@@ -1,5 +1,10 @@
 import os
 import joblib
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 
 from src.data_preprocessing import prepare_data
 from src.feature_engineering import apply_scaling, apply_pca, apply_kmeans
@@ -47,6 +52,49 @@ def main():
     # =============================
     rf = train_random_forest(X_train, y_train)
     rf_acc, rf_report, rf_cm = evaluate_model(rf, X_test, y_test, "Random Forest")
+
+    # =========================================================
+    # HYBRID ENSEMBLE MODEL (RF + DT + SVM)
+    # =========================================================
+    print("\n========== Hybrid Ensemble Evaluation ==========\n")
+
+    # Individual predictions
+    dt_pred = dt.predict(X_test)
+    rf_pred = rf.predict(X_test)
+    svm_pred = svm.predict(X_test_final)
+
+    # Stack predictions
+    all_preds = np.vstack([dt_pred, rf_pred, svm_pred])
+
+    # Majority voting
+    ensemble_pred = np.apply_along_axis(
+        lambda x: np.bincount(x).argmax(),
+        axis=0,
+        arr=all_preds
+    )
+
+    # Accuracy
+    ensemble_acc = accuracy_score(y_test, ensemble_pred)
+    print(f"Hybrid Ensemble Accuracy: {ensemble_acc:.4f}")
+
+    # Classification report
+    print("\nHybrid Classification Report:\n")
+    print(classification_report(y_test, ensemble_pred, target_names=le.classes_))
+
+    # Confusion matrix
+    cm = confusion_matrix(y_test, ensemble_pred)
+    print("\nHybrid Confusion Matrix:\n", cm)
+
+    # Plot confusion matrix
+    plt.figure(figsize=(7,5))
+    sns.heatmap(cm, annot=True, fmt="d", cmap="Blues",
+                xticklabels=le.classes_,
+                yticklabels=le.classes_)
+    plt.title("Hybrid Ensemble Confusion Matrix")
+    plt.xlabel("Predicted")
+    plt.ylabel("Actual")
+    plt.tight_layout()
+    plt.show()
 
     # =============================
     # CREATE MODELS FOLDER
