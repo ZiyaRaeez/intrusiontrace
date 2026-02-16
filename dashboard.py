@@ -7,7 +7,7 @@ from src.shap_explainer import generate_shap_plot
 st.set_page_config(page_title="IntrusionTrace", layout="wide")
 
 st.title("🚨 IntrusionTrace Hybrid Intrusion Detection System")
-st.write("AI-Powered Intrusion Detection with Real-Time Monitoring & Explainable AI")
+st.write("AI-Powered Intrusion Detection with Explainable AI")
 
 uploaded = st.file_uploader("Upload WSN CSV file", type=["csv"])
 
@@ -77,44 +77,6 @@ if uploaded:
         result.to_csv(index=False),
         file_name="intrusiontrace_report.csv"
     )
-
-    st.divider()
-
-    # =====================================================
-    # REAL-TIME SIMULATION
-    # =====================================================
-    st.subheader("🟢 Real-Time Intrusion Monitoring (Simulated)")
-
-    if st.button("Start Live Monitoring"):
-
-        st.warning("Live monitoring started...")
-
-        uploaded.seek(0)
-        df_live = pd.read_csv(uploaded)
-
-        placeholder = st.empty()
-
-        for i in range(0, len(df_live), 50):
-
-            chunk = df_live.iloc[i:i+50]
-            temp_file = "temp_live.csv"
-            chunk.to_csv(temp_file, index=False)
-
-            live_result = predict_file(temp_file)
-
-            with placeholder.container():
-                st.write("### Live Intrusion Feed")
-
-                c1, c2, c3 = st.columns(3)
-                c1.metric("Records", len(live_result))
-                c2.metric("🔴 RED", (live_result["Alert"]=="RED").sum())
-                c3.metric("🟡 YELLOW", (live_result["Alert"]=="YELLOW").sum())
-
-                st.dataframe(live_result.head(20), use_container_width=True)
-
-            time.sleep(2)
-
-        st.success("Live monitoring finished")
 
     st.divider()
 
