@@ -3,24 +3,22 @@ import joblib
 import pandas as pd
 import matplotlib.pyplot as plt
 
-# load model + scaler
+
 rf = joblib.load("models/rf_model.pkl")
 scaler = joblib.load("models/scaler.pkl")
 
 def generate_shap_plot(uploaded_file):
-
     uploaded_file.seek(0)
     df = pd.read_csv(uploaded_file)
 
-
-    # remove unwanted
+ 
     for col in ["Attack type", "id"]:
         if col in df.columns:
             df = df.drop(columns=[col])
 
     df.columns = df.columns.str.strip()
 
-    # match training columns
+
     trained_cols = list(scaler.feature_names_in_)
 
     for col in trained_cols:
@@ -30,7 +28,7 @@ def generate_shap_plot(uploaded_file):
     X = df[trained_cols].copy()
     X_scaled = scaler.transform(X)
 
-    # sample for speed
+
     X_sample = X[:200]
 
     explainer = shap.TreeExplainer(rf)

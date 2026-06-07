@@ -36,7 +36,7 @@ def apply_kmeans(X_train_pca, X_test_pca):
         random_state=42
     )
 
-    # Fit only on subset (like you did)
+    # Fit only on subset
     X_subset = X_train_pca[:50000]
     kmeans.fit(X_subset)
 
